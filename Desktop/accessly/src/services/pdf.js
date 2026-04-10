@@ -223,14 +223,65 @@ function renderExecutiveSummary(doc, analysis, _pageScanned, _scanDate) {
       .text(stat.label, x, rowY + 26, { width: colWidth, align: 'center' });
   });
 
-  doc.moveDown(4);
+  doc.moveDown(2.5);
+
+  // ── Risk level guide ────────────────────────────────────────────────────────
+  doc
+    .font('Inter')
+    .fontSize(8)
+    .fillColor(COLOURS.textMid)
+    .text(
+      '0–3  Low risk   ·   4–6  Moderate risk   ·   7–10  High legal and commercial risk',
+      MARGIN, doc.y, { width: CONTENT_WIDTH, align: 'center' }
+    );
+
+  doc.moveDown(0.6);
+
+  const riskBandLabel = score >= 7 ? 'high legal and commercial risk'
+                      : score >= 4 ? 'moderate risk'
+                      : 'low risk';
+  const riskBandColour = score >= 7 ? COLOURS.severityCrit
+                       : score >= 4 ? COLOURS.severityMaj
+                       : COLOURS.severityMin;
+
+  doc
+    .font('Inter-Bold')
+    .fontSize(10)
+    .fillColor(riskBandColour)
+    .text(
+      `Your score indicates ${riskBandLabel}. Immediate remediation is recommended.`,
+      MARGIN, doc.y, { width: CONTENT_WIDTH, align: 'center' }
+    );
+
+  doc.moveDown(1.5);
   horizontalRule(doc);
+  doc.moveDown(1);
+
+  // ── "Why this matters commercially" — static section, same for every report ─
+  doc
+    .font('Inter-Bold')
+    .fontSize(13)
+    .fillColor(COLOURS.textDark)
+    .text('Why this matters commercially', MARGIN, doc.y, { width: CONTENT_WIDTH });
+
+  doc.moveDown(0.7);
+
+  doc
+    .font('Inter')
+    .fontSize(10)
+    .fillColor(COLOURS.textMid)
+    .text(
+      'Accessibility issues do not just create compliance risk — they can directly impact conversion rates. ' +
+      'If customers cannot read product information, navigate the page, or complete checkout, they are more likely to drop off.\n\n' +
+      'Fixing these issues improves usability for all customers while reducing legal and operational risk.',
+      MARGIN, doc.y, { width: CONTENT_WIDTH, lineGap: 4 }
+    );
 }
 
 // ─── Top 3 critical issues ───────────────────────────────────────────────────
 
 const CARD_INNER_PAD = 20; // padding inside issue cards, all sides
-const CARD_HEADER_H  = 44; // fixed height of the coloured title bar
+const CARD_HEADER_H  = 64; // tall enough to vertically centre a 2-line title
 
 function renderTopIssues(doc, analysis) {
   const issues = (analysis.topIssues || []).slice(0, 3);
@@ -272,14 +323,17 @@ function renderTopIssues(doc, analysis) {
       .font('Inter-Bold')
       .fontSize(12)
       .fillColor(COLOURS.white)
+      // Title y: 18pt from top centres 2-line text (~28pt) in the 64pt bar.
+      // Single-line titles sit slightly below centre — still clean.
       .text(
         `${idx + 1}.  ${issue.title || 'Untitled issue'}`,
         innerX,
-        headerY + 16,
-        { width: innerWidth - 80, lineBreak: false }
+        headerY + 18,
+        { width: innerWidth - 80 }
       );
 
     // Severity badge — right-aligned, vertically centred in bar
+    // 9pt text ≈ 10pt height; (64 - 10) / 2 = 27
     doc
       .font('Inter-SemiBold')
       .fontSize(9)
@@ -287,7 +341,7 @@ function renderTopIssues(doc, analysis) {
       .text(
         (issue.severity || 'Minor').toUpperCase(),
         MARGIN + CONTENT_WIDTH - 80,
-        headerY + 18,
+        headerY + 27,
         { width: 70, align: 'right' }
       );
 
@@ -403,23 +457,58 @@ function renderCtaPage(doc, _pageScanned) {
 
   doc.moveDown(0.8);
 
-  const ctaBody =
-    'This automated scan catches around 30% of accessibility issues — ' +
-    'the ones that can be detected by a tool.\n\n' +
-    'A full AccesslyScan audit covers the rest: manual review by an ' +
-    'accessibility specialist, a prioritised fix list your development ' +
-    'team can act on immediately, and compliance documentation you can ' +
-    'use with legal if needed.';
+  doc
+    .font('Inter')
+    .fontSize(12)
+    .fillColor(COLOURS.coverSubtext)
+    .text(
+      'This automated scan detects approximately 30% of accessibility issues — ' +
+      'the ones that can be identified programmatically.',
+      MARGIN, doc.y, { width: CONTENT_WIDTH, lineGap: 5 }
+    );
+
+  doc.moveDown(1);
 
   doc
     .font('Inter')
     .fontSize(12)
     .fillColor(COLOURS.coverSubtext)
-    .text(ctaBody, { width: CONTENT_WIDTH, lineGap: 5 });
+    .text(
+      'The remaining issues require manual review and are often the ones that affect real user ' +
+      'journeys most severely. This means your actual accessibility risk may be significantly ' +
+      'higher than this report indicates.',
+      MARGIN, doc.y, { width: CONTENT_WIDTH, lineGap: 5 }
+    );
 
-  doc.moveDown(2);
+  doc.moveDown(1.2);
 
-  // CTA button-style box
+  doc
+    .font('Inter-SemiBold')
+    .fontSize(12)
+    .fillColor(COLOURS.white)
+    .text('A full AccesslyScan audit includes:', MARGIN, doc.y, { width: CONTENT_WIDTH });
+
+  doc.moveDown(0.7);
+
+  const auditIncludes = [
+    'Manual review by an accessibility specialist',
+    'A prioritised fix plan for your developer or agency',
+    'Identification of the highest-risk issues affecting revenue and compliance',
+    'Documentation to support remediation if required',
+  ];
+
+  auditIncludes.forEach((item) => {
+    doc
+      .font('Inter')
+      .fontSize(11)
+      .fillColor(COLOURS.coverSubtext)
+      .text(`•   ${item}`, MARGIN + 12, doc.y, { width: CONTENT_WIDTH - 12, lineGap: 3 });
+    doc.moveDown(0.5);
+  });
+
+  doc.moveDown(1.5);
+
+  // CTA button
   const btnY = doc.y;
   doc.rect(MARGIN, btnY, CONTENT_WIDTH, 50).fill(COLOURS.accent);
 
@@ -428,7 +517,7 @@ function renderCtaPage(doc, _pageScanned) {
     .fontSize(14)
     .fillColor(COLOURS.textDark)
     .text(
-      'Book a free 20-minute call — AccesslyScan.ai',
+      'Book a free 20-minute review — AccesslyScan.ai',
       MARGIN,
       btnY + 17,
       { width: CONTENT_WIDTH, align: 'center' }
