@@ -9,6 +9,7 @@
  */
 
 const express = require('express');
+const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 
 const { scanUrl, WaveError } = require('../services/wave');
@@ -128,10 +129,27 @@ router.post('/', auditRateLimit, async (req, res) => {
     });
   }
 
-  // ── 5. Build and return response ──────────────────────────────────────────
+  // ── 5. Fire GHL webhook (non-blocking) ───────────────────────────────────
   const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
   const pdfUrl = `${baseUrl}/api/audit/${scanId}/pdf`;
 
+  if (process.env.GHL_WEBHOOK_URL) {
+    axios
+      .post(process.env.GHL_WEBHOOK_URL, {
+        firstName,
+        email,
+        url,
+        riskScore: analysis.riskScore,
+        pdfUrl,
+        scanId,
+      })
+      .catch((err) => {
+        // Log but never fail the request — email is best-effort
+        console.error('[audit] GHL webhook error:', err.message);
+      });
+  }
+
+  // ── 6. Build and return response ──────────────────────────────────────────
   return res.status(200).json({
     scanId,
     topIssues: analysis.topIssues,
