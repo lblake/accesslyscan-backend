@@ -18,8 +18,8 @@ const auditRateLimit = rateLimit({
     res.status(429).json({
       error: true,
       message:
-        'You have reached the maximum number of free scans for this hour. ' +
-        "Enter your email below and we'll let you know when you can scan again.",
+        "You've used your 3 scans for this hour. Access resets automatically in 60 minutes.\n" +
+        'Want to hear when we launch new features and compliance updates? Drop your email below',
       code: 'RATE_LIMITED',
     });
   },
